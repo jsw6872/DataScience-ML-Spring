@@ -4,3 +4,4 @@ img
 *.sh
 *.csv
 test.py
+*.pyc
