@@ -5,3 +5,4 @@ img
 *.csv
 test.py
 *.pyc
+.DS_Store
