@@ -24,8 +24,7 @@
 2. 첫번째 그룹을 testing data로 선정, 나머지 training data
 3. 두번째 그룹을 testing data 로 선정 나머지 training data
 4. ,,,
-5. ,,,
-6. 이 모든게 한 모델에 대해 이루어짐 -> n개의 모델이 이 과정 반복
+5. 이 모든게 한 모델에 대해 이루어짐 -> n개의 모델이 이 과정 반복
 
 ## LOCV (leave one out of cross validation)
 - k-fold cross validation의 극단적 형태
