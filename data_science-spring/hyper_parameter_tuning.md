@@ -37,7 +37,7 @@ p는 feature 수
 - 사용자가 사전적으로 지정하며 데이터로부터 학습되지 않음
 
 - K : 다항식 차수
-- $$ \lambda : 모델규제 비용함수의 계수 $$
+- $\lambda : 모델규제 비용함수의 계수$
 - 변수간 상호작용 삽입 여부
 
 ![summary](img/hyper_parameter_sum.png)
