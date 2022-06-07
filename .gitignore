@@ -1,6 +1,4 @@
 *.ipynb_checkpoints
-*.png
-img
 *.sh
 *.csv
 test.py
