@@ -29,6 +29,7 @@
 ---
 ## LOF (Local Outlier Factor) - K-distance
 ![k-distance](img/k_distance.png)
+> 괄호 안에 있는 걸로 해석 윗 줄 무시
 - 예시1 : 3일 때의 평균거리
 - 예시2 : 3일 때 거리가 같은 것이 있으면 그것도 포함
 - `k-dist(p)` : p를 기준으로 나와 가까운 K개의 평균거리
