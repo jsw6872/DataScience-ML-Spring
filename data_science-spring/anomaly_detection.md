@@ -64,7 +64,7 @@ SKip
 - 정상 데이터가 고립되려면 많은 수의 질문을 거쳐야 함(depth가 커짐)
 - 비정상데이터는 적은 수의 질문으로 고립 가능(depth가 낮음)
 
-![isolation_forest2](img/isolation_forest2.png)
+![isolation_forest2](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/isolation_forest2.png)
 $s(x,n)=2^{-\frac{E(h(x))}{c(n)}}$
 
 ---
