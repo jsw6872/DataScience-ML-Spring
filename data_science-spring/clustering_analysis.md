@@ -20,11 +20,11 @@
 
 ## 과정  예시
 step 1. 무작위의 K개 중점 생성 후 데이터를 가까운 $\mu_k$에 할당
-![step1](img/kmeans_step1.png)
-![step2](img/kmeans_step2.png)
+![[step1](img/kmeans_step1.png)](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/kmeans_step1.png)
+![[step2](img/kmeans_step2.png)](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/kmeans_step2.png)
 
 stpe 2. 클러스터링된 군집의 무게중심(평균값)을 계산 해 $\mu_k$ 갱신 후 거리 재서 클러스터 재할당 -> 다시 무게중심 구하고 거리 재서 클러스터 재할당하는 과정을 반복하다가 더 이상 갱신되는 지점이 없으면 종료
-![step3](img/kmeans_step3.png)
+![[step3](img/kmeans_step3.png)](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/kmeans_step3.png)
 
 ## 클러스터링 분석의 평가
 ![value_function](img/cluster_value_func.png)
