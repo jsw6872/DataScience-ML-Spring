@@ -66,10 +66,10 @@ OR
   - 가장 가까운 두 개의 클러스터를 찾아 합침
   - 만약 모든 데이터가 하나의 클러스터로 합쳐지면 종료
 
-![step1](img/hc_step1.png)
-![step2](img/hc_step2.png)
-![step3](img/hc_step3.png)
-![step4](img/hc_step4.png)
+![step1](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/hc_step1.png)  
+![step2](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/hc_step2.png)  
+![step3](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/hc_step3.png)  
+![step4](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/hc_step4.png)  
 - 그림에서 선의 높이가 클러스터 간의 거리
 
 ## 클러스터간 거리 계산 방식
