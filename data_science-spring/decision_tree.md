@@ -9,8 +9,8 @@
 
 ## 엔트로피란?
 - 무질서함의 정도를 측정하는 지표 -> 1에 가까울수록 무질서 (두 label이 많이 섞일수록 무질서함이 큼)  
-$H(X)=-\sum_{i=1}^{n}P(x_i)log_2P(x_i)$
-![asd](img/entropy.png)
+$H(X)=-{\sum_{i=1}^{n}}P(x_i)log_2P(x_i)$
+![[asd](img/entropy.png)](https://raw.githubusercontent.com/jsw6872/DataScience-ML-Spring/main/data_science-spring/img/entropy.png)
 
 ## Information Gain
 - 공간을 쪼갬으로 인해서 얻어지는 엔트로피의 감소 정도
