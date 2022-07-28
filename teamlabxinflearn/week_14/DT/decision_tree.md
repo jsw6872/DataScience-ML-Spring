@@ -66,3 +66,10 @@ j는 라벨의 종류 (ex : A = 색, j = 1,2,3...는 빨강 노랑 파랑 등)
 
 ### Post-pruning
 ![post_pruning](../../img/port_pruning.png)
+
+## Contunuous Dicision Tree
+- 전체 데이터를 모두 기준점으로 함
+- 중위값, 4분위수등을 기준점으로 하여 Y-class값이 바뀌는 수를 기준점으로 한다
+### 특징
+- 명목속성과 달리, 하나의 attribute에서 나온 split값들을 여러번 재사용 가능하다. ( 단, 경계값은 달라야함)
+- 연속값과 명목값 둘 다 split 가능
