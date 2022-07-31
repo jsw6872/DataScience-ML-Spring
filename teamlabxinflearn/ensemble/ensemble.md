@@ -17,3 +17,17 @@
 - Adaptive boosting(AdaBoost)
 - XGBoost
 - Light GBM
+
+## Voting classifier
+- 가장 기본적인 ensemble classifier
+- 여러 개의 Model의 투표를 통해 최종 선택 실시
+- Majority voting or Vallila ensemble 모델이라고 불림
+
+### sklearn.esnsemble.VotingClassifier
+- estimators : list형태로 여러 model들이 들어간다
+- voting
+  - hard : sum해서 다수
+  - soft : 확률로 변환하여 각 feature의 weight값이 가장 높은 친구 선택
+- weights : 각각의 모델이나 클래스에 weight를 준다
+- n_jobs : cpu를 얼마나 쓸 것인가
+
