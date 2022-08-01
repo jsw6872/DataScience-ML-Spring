@@ -129,3 +129,32 @@
 - algorithm : 
 
 ---
+## Gradient Boosting
+- Sequential + Additive Model
+- 이전 모델의 Residual를 가지고 Weak learner를 강화함
+- residual을 예측하는 형태의 모델
+
+### procedure example
+![gbm1](../img/gbm_ex_1.png)
+- stump를 구해서 residual을 구한 뒤 그 residual을 통해 다음 모델의 residual을 구한다
+![gbm2](../img/gbm_ex_2.png)
+- Tree 1 Prediction = base model = f1
+- Tree 2 Prediction = h1
+- Combined Prediction = f1 + h1 = f2
+
+![gbm3](../img/gbm_ex_3.png)
+![gbm4](../img/gbm_ex_4.png)
+
+### Turning parameters
+- number of tree (estimators): 몇 개의 모델
+- depth of tree 
+- subsampling
+- shrinkage parameter (learning rate): 작을수록 뒷 모델이 영향을 덜 줌 -> 모델(estimator)을 늘려야함
+- fitting to low variance(weak learner로 해야함)
+
+### sklearn.ensemble.GradientBoostingRegressor
+- loss : ls(Squared error), lad, huber, quantile
+- learning_rate : $\lambda$
+- n_estimators : 트리의 개수
+- max_depth : weak learner를 위해 작게
+- subsample : 데이터 샘플링
