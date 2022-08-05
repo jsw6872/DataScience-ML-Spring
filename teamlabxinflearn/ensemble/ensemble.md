@@ -185,3 +185,13 @@
 - eval_metric : evaluation을 뭘 할건지
 - num_boost_round : 몇 번의 iteration을 쓸 것인지
 - early_stopping_rounds : 몇 번에서 자를 것인지(best score가 나오고 지정한 횟수만큼 더 실행해서 더 나은 loss가 없다면 끝냄)
+
+---
+## LightGBM
+- 더 빠른 학습과 예측 수행시간
+- 더 작은 메모리 사용량
+- 카테고리형 feature의 자동변환과 최적분할 가능(원핫인코딩 등을 사용하지 않고도 카테고리형 피처를 최적으로 변환하고 이에 따른 노드 분할 수행)
+
+### parameters
+![lgbm](../img/lgbm_parameter.png)
+![lgbm](../img/lgbm_parameter2.png)
