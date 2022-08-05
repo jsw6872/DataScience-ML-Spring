@@ -158,3 +158,30 @@
 - n_estimators : 트리의 개수
 - max_depth : weak learner를 위해 작게
 - subsample : 데이터 샘플링
+
+---
+## XGBoost (eXtra Gradient Boost)
+![xgb](../img/xgb.png)
+### 주요 장점
+- 뛰어난 예측 성능
+- GBM 대비 빠른 수행시간
+  - CPU 병렬처리 및 GPU 지원
+- 다양한 성능 향상 기능
+  - Regularization 기능 탑재
+  - Tree Pruning (sklearn.GBM에는 없음)
+- 다양한 편의 기능
+  - Early Stopping
+  - 자체 내장된 교차검증
+  - 결손값 자체 처리
+
+![Xgboost](../img/xgboost.png)
+![Xgboost](../img/xgb_parameter.png)
+![Xgboost](../img/xgb_parameter2.png)
+
+### parameter
+- max_depth
+- eta : learning rate
+- objective : objective function(cost function)을 뭘 쓸건지
+- eval_metric : evaluation을 뭘 할건지
+- num_boost_round : 몇 번의 iteration을 쓸 것인지
+- early_stopping_rounds : 몇 번에서 자를 것인지(best score가 나오고 지정한 횟수만큼 더 실행해서 더 나은 loss가 없다면 끝냄)
