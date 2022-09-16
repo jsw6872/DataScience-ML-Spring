@@ -7,4 +7,4 @@ PASSWORD = ''
 # launch_ssh(NGROK_TOKEN, PASSWORD)
 
 
-# remote-ssh
+# remote-ssh -> ssh root@~~ -p port_number
