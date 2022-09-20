@@ -8,7 +8,7 @@
 - 비선형함수로써 딥러닝에서 매우 중요
 - 활성함수를 쓰지 않으면 딥러닝은 선형모형과 차이가 없음
 ![function](../img/activate_func.png)
-
+[활성화함수 참고](https://heeya-stupidbutstudying.tistory.com/entry/ML-%ED%99%9C%EC%84%B1%ED%99%94-%ED%95%A8%EC%88%98Activation-Function)
 ## 신경망 계산 : forward propagation
 - 학습이 아닌 계산을 의미
 ![forward](../img/forward.png)
