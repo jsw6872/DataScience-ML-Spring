@@ -31,7 +31,7 @@ def figure_sigmoid_scatter(iterations):
 
     inner_ratio = collections.Counter(color)['red'] / len(color)
 
-    plt.scatter(random_x, random_y, color = color, s = 2, label = f'{inner_ratio * 10}')
+    plt.scatter(random_x, random_y, color = color, s = 2, label = f'area : {inner_ratio * 10}')
     plt.legend()
 
     plt.show()
