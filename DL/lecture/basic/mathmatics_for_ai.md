@@ -39,40 +39,40 @@ print("파이값은? ",4 * count / n)
   - 데이터가 주어진 상황에서 $\theta$를 변형시킴에 따라 값이 바뀌는 함수로 이해
   - 가능도함수는 모수 $\theta$를 따르는 분포가 데이터 x를 관찰할 가능성을 뜻함($\theta$에 대한 확률로 해석 X -> 대소 관계 정도로 해석)
 - 데이터 집합 X가 독립적으로 추출되었을 경우 로그가능도를 최적화
-![mle](../img/mle.png)
+![mle](../../img/mle.png)
 
 ### 왜 로그가능도를 사용하나요?
-![log](../img/log_mle.png)
+![log](../../img/log_mle.png)
 
 ### 최대가능도 추정법 예제: 정규분포
-![mle2](../img/mle_2.png)
-![mle3](../img/mle_3.png)
+![mle2](../../img/mle_2.png)
+![mle3](../../img/mle_3.png)
 
 
 ### 최대가능도 추정법 예제: 카테고리 분포
-![mle4](../img/mle_4.png)
+![mle4](../../img/mle_4.png)
 
 ## 딥러닝에서 최대가능도 추정법
-![mle5](../img/mle_5.png)  
+![mle5](../../img/mle_5.png)  
 [ref](https://aigong.tistory.com/369)
 
 ---
 ## 확률분포의 거리 구하기
-![distance](../img/distance.png)
+![distance](../../img/distance.png)
 
 ## 쿨백-라이블러 발산
-![kl](../img/kl_divergence.png)
+![kl](../../img/kl_divergence.png)
 
 ---
 # 베이지 통계학 맛보기
 ## 배이즈 정리를 통한 정보의 갱신
 1. 양성이라 검진됐을 때, 실제 질병이 감염됐을 확률
-![covid1](../img/covid_1.png)
+![covid1](../../img/covid_1.png)
 2. 앞서 양성이 나온 사람이 두번째 검사에서도 양성이 나왔을 때 실제로 감염이 됐을 확률
-![covid2](../img/covid_2.png)
+![covid2](../../img/covid_2.png)
 
 ---
 ## 인과관계 추론 : 예제
 - 단순 수술 확률은 b가 좋을 수도 있지만 각각의 신장 결석 크기에 따른 관계를 배제하고 계산을 하면 a가 더 성공률이 높다
-![surgery](../img/surgery_1.png)
-![surgery2](../img/surgery_2.png)
+![surgery](../../img/surgery_1.png)
+![surgery2](../../img/surgery_2.png)

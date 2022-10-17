@@ -19,14 +19,14 @@
 ## DL
 - 주로 뉴럴 네트워크 구조를 사용
 - 방대한 데이터 + 높은 컴퓨터 성능 + 좋은 알고리즘
-![NN](../img/nn.png)
+![NN](../../img/nn.png)
 > perceptron의 구조(멀티 레이어 펄셉트론)
 - activate function은 시그모이드 함수로 바꿔서 여러가지 시도
 
 ### multi layer perceptron
 XOR구조도 다중 레이어로 구현이 가능한데, 과연 weight값을 어떻게 찾을 것인가?
 > chain rule을 사용한 미분을 통해 Backpropagation을 이용
-![nn2](../img/nn_2.png)
+![nn2](../../img/nn_2.png)
 
 ---
 # DL introduction

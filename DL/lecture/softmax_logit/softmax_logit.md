@@ -8,12 +8,12 @@
 ## softmax
 - 다중 분류 문제에서 logit을 통해 나온 값을 전체 확률이 1이 되게 확률값으로 변환
 - k를 2로 두면 sigmoid로 환원 (sigmoid의 일반형으로 생각)
-![cross_entropy](../img/softmax.png)
+![cross_entropy](../../img/softmax.png)
 
 ## corss entropy
 - multinomial classification에서의 loss function
 - q는 softmax를 거쳐서 나온 확률값, p는 실제 y값 -> 이 둘이 모두 쓰여서 cross entropy
-![cross_entropy](../img/cross_ent.png)
+![cross_entropy](../../img/cross_ent.png)
 
 ---
 - 코드에서 사용될때는 서로 다른 용도(sigmoid는 activation에, softmax는 classification에)로 사용
