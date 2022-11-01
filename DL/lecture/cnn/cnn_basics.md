@@ -47,3 +47,6 @@ $(I*K)(i,j)=\sum_{m}\sum_{n}I(m,n)K(i-m, j-n)=\sum_{m}\sum_{n}I(i-m, i-n)K(m,n)$
 ![stride2](../../img/stride_2.png)
 > 3차원 데이터에서 주의할 점은 입력 데이터와 필터의 채널 수가 같아야함
 
+## 3차원 tensor에서의 방식
+![tensor](../../img/cnn_tensor.png)
+![tensor2](../../img/cnn_tensor_2.png)
