@@ -24,7 +24,7 @@ $(I*K)(i,j)=\sum_{m}\sum_{n}I(m,n)K(i-m, j-n)=\sum_{m}\sum_{n}I(i-m, i-n)K(m,n)$
 
 ### layer of CNN
 - convolution & pooling layer : feature extraction
-  > 이미지에서 유용한 정보 뽑음
+  > 이미지에서 유용한 정보 뽑음(max pooling, average pooling 등)
 
 - fully connected layer : decision making (e.g., classification에서 원하는 출력값을 해주는)
   > 요즘엔 fully connected를 최소화하는 추세 -> why? parameter에 dependent한데 많아지면 일반화가 어려움.
