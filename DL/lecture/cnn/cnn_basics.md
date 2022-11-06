@@ -50,3 +50,5 @@ $(I*K)(i,j)=\sum_{m}\sum_{n}I(m,n)K(i-m, j-n)=\sum_{m}\sum_{n}I(i-m, i-n)K(m,n)$
 ## 3차원 tensor에서의 방식
 ![tensor](../../img/cnn_tensor.png)
 ![tensor2](../../img/cnn_tensor_2.png)
+> 필터마다 각자의 역할을 가짐
+> ex) 필터1은 얼굴을 찾고 필터2는 코를 찾는 등
