@@ -132,15 +132,15 @@ def main():
 
     train_labels_map = {v:k for k, v in train_data.class_to_idx.items()}
     
-    model = model.DenseNet_121(len(train_labels_map)).to(device)
+    _model = model.DenseNet_121(len(train_labels_map)).to(device)
 
     # criterion = nn.CrossEntropyLoss().cuda()
     # optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.95, weight_decay=0.001)
-    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=0.001)
+    optimizer = optim.Adam(_model.parameters(), lr=LEARNING_RATE, weight_decay=0.001)
     # scheduler = StepLR(optimizer, step_size=1, gamma=0.1)
 
     try:
-        base, train_loss_list, val_loss_list = train_baseline(model, train_iter, val_iter, optimizer, EPOCHS)
+        base, train_loss_list, val_loss_list = train_baseline(_model, train_iter, val_iter, optimizer, EPOCHS)
         torch.save(base,'baseline.pt')
         
         train_loss_msg = str(train_loss_list[-5])
