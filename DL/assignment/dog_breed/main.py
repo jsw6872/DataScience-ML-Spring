@@ -127,7 +127,9 @@ def main():
     train_iter = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=10)
     val_iter = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=10)
     test_iter = torch.utils.data.DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=1)                           
-    
+ 
+    print('Dataset is ready!')
+
     train_labels_map = {v:k for k, v in train_data.class_to_idx.items()}
     
     model = model.DenseNet_121(len(train_labels_map)).to(device)
