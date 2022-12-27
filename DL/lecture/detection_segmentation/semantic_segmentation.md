@@ -26,16 +26,19 @@
 이미지 안에서 아주 많은 region을 뽑고 똑같은 크기에 맞춰서 SVM으로 분류를 한다 -> 그 후 CNN을 통해 feature extraction
 - Selective Search를 이용해 2000개의 region proposal 생성
   - 각 region proposal을 일일이 CNN에 넣어서 결과 계산
-> 많은 region을 전부 CNN을 돌려줘야하는 문제점이 있음
+> - 많은 region을 전부 CNN을 돌려줘야하는 문제점이 있음  
+> - 입력 이미지에 대하여 CPU 기반의 Selective Search를 진행해야 하므로 많은 시간이 소요
+> - end to end 방식으로 학습 불가능
 
 ### Fast R-CNN
-SPPNet과 유사  
+- 동일한 region proposal을 이용하되 이미지를 한번만 CNN에 넣어 Feature map 생성
+- ROI 영역에 대해 max pooling을 이용해 고정된 크기의 벡터 생성  
 여러 바운딩 박스를 만든 뒤 feature map에 대응한 뒤에 뉴럴넷을 통과시킨다
 ![R-CNN](../../img/fast_r_cnn.png)
 
 ### Faster R-CNN
 - RPN을 통해 기존 CPU에서 진행되던 selective Search의 문제 해결(GPU상에서 돌림)
-  - feature map을 통해 물체가 있을 법한 곳에 예측할 수 있도록 함
+  - feature map이 인풋으로 왔을 때 물체가 있을 법한 곳에 예측할 수 있도록 함
 - Region Proposal Network + Fase R-CNN
 ![based r_cnn](../../img/r_cnn.png)
 
