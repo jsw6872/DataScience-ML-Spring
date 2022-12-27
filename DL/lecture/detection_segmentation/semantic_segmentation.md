@@ -24,6 +24,8 @@
 ---
 ### R-CNN
 이미지 안에서 아주 많은 region을 뽑고 똑같은 크기에 맞춰서 SVM으로 분류를 한다 -> 그 후 CNN을 통해 feature extraction
+- Selective Search를 이용해 2000개의 region proposal 생성
+  - 각 region proposal을 일일이 CNN에 넣어서 결과 계산
 > 많은 region을 전부 CNN을 돌려줘야하는 문제점이 있음
 
 ### Fast R-CNN
@@ -38,10 +40,17 @@ SPPNet과 유사
 ![based r_cnn](../../img/r_cnn.png)
 
 #### Region Proposal Network
-- 물체가 무엇인지보단 있는지 없는지 찾음
-- 미리 정해놓은 바운딩박스(대충 어떤 크기의 물체들이 있을지 예상)를 k개 만들어놓고 찾는다
+- Sliding Window
+  - 다양한 형태의 윈도우를 슬라이딩하며 물체의 존재 확인
+  - 미리 정해놓은 바운딩박스(대충 어떤 크기의 물체들이 있을지 예상)를 k개 만들어놓고 찾는다
+  - 너무 많은 영역에 대해 확인해야 한다는 단점 존재
+- Selective Search
+  - 인접한 영역끼리 유사성을 측정해 큰 영역으로 차례대로 통합해나감
 ![RPN](../../img/rpn.png)
 
+#### NMS (Non Maximum Suppression)
+- 객체 검출(object detection)에서는 하나의 인스턴스(instance)에 하나의 bounding box가 적용
+  - 따라서 
 ### YOLO
 - Region Proposal 과정이 없기 때문에 좀 더 빠름
 - 동시에 작용
