@@ -12,14 +12,15 @@ import sys
 import tempfile
 import time
 import copy
+import tqdm
 
 import model
 import set_utils
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-EPOCHS = 400
-BATCH_SIZE = 64
+EPOCHS = 300
+BATCH_SIZE = 32
 LEARNING_RATE = 0.01
 
 
@@ -41,7 +42,7 @@ def train_baseline(model ,train_loader, val_loader, optimizer, num_epochs):
     best_acc = 0.0  
     best_model_wts = copy.deepcopy(model.state_dict()) 
  
-    for epoch in range(1, num_epochs + 1):
+    for epoch in tqdm(range(1, num_epochs + 1)):
         since = time.time()  
         train(model, train_loader, optimizer)
         train_loss, train_acc = evaluate(model, train_loader) 
@@ -124,15 +125,15 @@ def main():
     val_data = datasets.ImageFolder(DATASET_PATH + '/val', transform=val_transforms)
     test_data = datasets.ImageFolder(DATASET_PATH + '/test', transform=test_transforms)
 
-    train_iter = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=10)
-    val_iter = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=10)
+    train_iter = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=8)
+    val_iter = torch.utils.data.DataLoader(val_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=8)
     test_iter = torch.utils.data.DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=True, num_workers=1)                           
  
     print('Dataset is ready!')
 
     train_labels_map = {v:k for k, v in train_data.class_to_idx.items()}
     
-    _model = model.DenseNet_121(len(train_labels_map)).to(device)
+    _model = model.DenseNet_201(len(train_labels_map)).to(device)
 
     # criterion = nn.CrossEntropyLoss().cuda()
     # optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.95, weight_decay=0.001)
@@ -141,7 +142,7 @@ def main():
 
     try:
         base, train_loss_list, val_loss_list = train_baseline(_model, train_iter, val_iter, optimizer, EPOCHS)
-        torch.save(base,'baseline.pt')
+        # torch.save(base,'baseline.pt')
         
         train_loss_msg = str(train_loss_list[-5])
         # val_loss_msg = str(val_loss_list[-5])

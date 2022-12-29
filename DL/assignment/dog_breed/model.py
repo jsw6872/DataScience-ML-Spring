@@ -45,7 +45,7 @@ class Transition(nn.Module):
         return self.down_sample(x)
 
 class DenseNet(nn.Module):
-    def __init__(self, nblocks, num_classes, growth_rate=12, reduction=0.5, init_weights=True):
+    def __init__(self, nblocks, num_classes, growth_rate=12, reduction=0.5):#, init_weights=True):
         super().__init__()
 
         self.growth_rate = growth_rate
@@ -74,8 +74,8 @@ class DenseNet(nn.Module):
         self.linear = nn.Linear(inner_channels, num_classes)
 
         # weight initialization
-        if init_weights:
-            self._initialize_weights()
+        # if init_weights:
+        #     self._initialize_weights()
     
     def forward(self, x):
         x = self.conv1(x)
@@ -92,18 +92,21 @@ class DenseNet(nn.Module):
             inner_channels += self.growth_rate
         return dense_block
 
-    def _initialize_weights(self):
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
-                nn.init.constant_(m.bias, 0)
+    # def _initialize_weights(self):
+    #     for m in self.modules():
+    #         if isinstance(m, nn.Conv2d):
+    #             nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+    #             if m.bias is not None:
+    #                 nn.init.constant_(m.bias, 0)
+    #         elif isinstance(m, nn.BatchNorm2d):
+    #             nn.init.constant_(m.weight, 1)
+    #             nn.init.constant_(m.bias, 0)
+    #         elif isinstance(m, nn.Linear):
+    #             nn.init.normal_(m.weight, 0, 0.01)
+    #             nn.init.constant_(m.bias, 0)
 
 def DenseNet_121(num_classes):
     return DenseNet([6, 12, 24, 16], num_classes)
+
+def DenseNet_201(num_classes):
+    return DenseNet([6, 12, 48, 32], num_classes)
