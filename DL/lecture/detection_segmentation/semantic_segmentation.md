@@ -13,6 +13,11 @@
 바운딩 박스로 찾는 것
 ## object detection 방식
 ![detection](../../img/detection_1.png)
+> - 한 이미지에서 객체와 그 경계 상자를 탐지
+> - 객체 탐지 알고리즘은 일반적으로 이미지를 입력으로 받고, 경계 상자와 객체 클래스 리스트를 출력
+> - 경계 상자에 대해 그에 대응하는 예측 클래스와 클래스의 confidence를 출력
+
+![iou](../../img/iou.png)
 ### 2-stage Detector
 물체의 위치를 찾는 문제(localization)와 분류 문제(classification)를 순차적으로 해결
 - region proposals : 이미지 안에서 사물이 존재할 것 같은 곳에 나열
