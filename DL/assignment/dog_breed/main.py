@@ -19,10 +19,37 @@ import set_utils
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-EPOCHS = 300
+EPOCHS = 30
 BATCH_SIZE = 32
-LEARNING_RATE = 0.01
+LEARNING_RATE = 0.05
 
+
+def pretrained_model(model_name, num_classes):
+    if model_name == 'resnet50':
+        _model = models.resnet50(weights = models.ResNet50_Weights.DEFAULT)
+    elif model_name == 'resnet152':
+        _model = models.resnet152(weights = models.ResNet152_Weights.IMAGENET1K_V2)
+    elif model_name == 'densenet161':
+        _model = models.densenet161(weights = models.DenseNet161_Weights.DEFAULT)
+    elif model_name == 'densenet201':
+        _model = models.densenet201(weights = models.DenseNet201_Weights.DEFAULT)
+    
+    # for name, param in _model.named_parameters():
+    #     if 'fc' not in name :
+    #         param.requires_grad = False
+
+    layer = 0
+    for child in _model.children():
+        # if layer <= 6: # 8, 9번째는 pooling, linear layer라서 학습에 큰 의미가 없음
+        for param in child.parameters():
+            param.requires_grad = False
+        # layer += 1
+
+    num_features = _model.fc.in_features
+    _model.fc = nn.Linear(num_features, num_classes)
+
+    _model = _model.to(device)
+    return _model
 
 def train(model, train_loader, optimizer):
     model.train()  
@@ -93,16 +120,19 @@ def evaluate(model, test_loader):
 
 def main():
 
-    train_transforms = transforms.Compose([transforms.RandomRotation(30),
-                                       transforms.RandomResizedCrop(224),
-                                       transforms.RandomHorizontalFlip(),
-                                       # transforms.RandomVerticalFlip(),
-                                       # transforms.RandomAffine(180, shear=20),
-                                       transforms.ToTensor(), # 정규화 결과가 0 ~ 1
-                                    #    transforms.Resize((224, 224)),
-                                       transforms.RandomErasing(),
-                                       transforms.Normalize([0.485, 0.456, 0.406],
-                                                            [0.229, 0.224, 0.225])
+    train_transforms = transforms.Compose([
+                                        transforms.Resize(256),
+                                        transforms.RandomResizedCrop(224),
+                                        transforms.RandomRotation(30),
+                                        transforms.RandomHorizontalFlip(),
+                                        transforms.ColorJitter(),
+                                        transforms.RandomVerticalFlip(),
+                                        # transforms.RandomErasing(),
+                                        # transforms.RandomAffine(180, shear=20),
+                                        transforms.ToTensor(), # 정규화 결과가 0 ~ 1
+                                        #    transforms.Resize((224, 224)),
+                                        transforms.Normalize([0.485, 0.456, 0.406],
+                                                                [0.229, 0.224, 0.225])
                                      ])
 
                                     #   transforms.CenterCrop(224),
@@ -133,16 +163,17 @@ def main():
 
     train_labels_map = {v:k for k, v in train_data.class_to_idx.items()}
     
-    _model = model.DenseNet_201(len(train_labels_map)).to(device)
+    _model = pretrained_model('resnet152', len(train_labels_map)).to(device)
+    print('model is ready!')
 
     # criterion = nn.CrossEntropyLoss().cuda()
     # optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.95, weight_decay=0.001)
-    optimizer = optim.Adam(_model.parameters(), lr=LEARNING_RATE, weight_decay=0.001)
+    optimizer = optim.SGD(_model.parameters(), lr=LEARNING_RATE, momentum=0.95)
     # scheduler = StepLR(optimizer, step_size=1, gamma=0.1)
 
     try:
         base, train_loss_list, val_loss_list = train_baseline(_model, train_iter, val_iter, optimizer, EPOCHS)
-        # torch.save(base,'baseline.pt')
+        torch.save(base,'case_21.pt')
         
         train_loss_msg = str(train_loss_list[-5])
         # val_loss_msg = str(val_loss_list[-5])
@@ -150,7 +181,7 @@ def main():
         for i in range(-4, 0):
             train_loss_msg += f' ---> {train_loss_list[i]}'
         
-        post_msg = f'학습이 완료되었습니다\ntrain loss : {train_loss_msg}\nmin val loss : {min(val_loss_list)}\n ephoc of best val loss : {val_loss_list.index(min(val_loss_list))}'
+        post_msg = f'학습이 완료되었습니다\ntrain loss : {train_loss_msg}\nmin val loss : {min(val_loss_list)}\n ephoc of best val loss : {val_loss_list.index(min(val_loss_list))+1}'
         res_ = set_utils._post_message(post_msg)
 
 
