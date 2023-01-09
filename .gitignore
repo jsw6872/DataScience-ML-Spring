@@ -9,3 +9,5 @@ DL/fastcampus/classification/data/
 DL/lecture/cnn/data/
 weight
 data
+weights
+model
