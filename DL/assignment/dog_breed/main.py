@@ -12,16 +12,16 @@ import sys
 import tempfile
 import time
 import copy
-import tqdm
+from tqdm import tqdm
 
 import model
 import set_utils
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-EPOCHS = 30
+EPOCHS = 160
 BATCH_SIZE = 32
-LEARNING_RATE = 0.05
+LEARNING_RATE = 0.01
 
 
 def pretrained_model(model_name, num_classes):
@@ -69,7 +69,7 @@ def train_baseline(model ,train_loader, val_loader, optimizer, num_epochs):
     best_acc = 0.0  
     best_model_wts = copy.deepcopy(model.state_dict()) 
  
-    for epoch in tqdm(range(1, num_epochs + 1)):
+    for epoch in range(1, num_epochs + 1):
         since = time.time()  
         train(model, train_loader, optimizer)
         train_loss, train_acc = evaluate(model, train_loader) 
@@ -163,30 +163,30 @@ def main():
 
     train_labels_map = {v:k for k, v in train_data.class_to_idx.items()}
     
-    _model = pretrained_model('resnet152', len(train_labels_map)).to(device)
+    _model = model.DenseNet_201(len(train_labels_map)).to(device)
+    # _model = pretrained_model('resnet152', len(train_labels_map)).to(device)
     print('model is ready!')
 
-    # criterion = nn.CrossEntropyLoss().cuda()
-    # optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE, momentum=0.95, weight_decay=0.001)
-    optimizer = optim.SGD(_model.parameters(), lr=LEARNING_RATE, momentum=0.95)
+    optimizer = optim.SGD(_model.parameters(), lr=LEARNING_RATE, momentum=0.95, weight_decay=0.001)
     # scheduler = StepLR(optimizer, step_size=1, gamma=0.1)
 
-    try:
-        base, train_loss_list, val_loss_list = train_baseline(_model, train_iter, val_iter, optimizer, EPOCHS)
-        torch.save(base,'case_21.pt')
-        
-        train_loss_msg = str(train_loss_list[-5])
-        # val_loss_msg = str(val_loss_list[-5])
-        
-        for i in range(-4, 0):
-            train_loss_msg += f' ---> {train_loss_list[i]}'
-        
-        post_msg = f'학습이 완료되었습니다\ntrain loss : {train_loss_msg}\nmin val loss : {min(val_loss_list)}\n ephoc of best val loss : {val_loss_list.index(min(val_loss_list))+1}'
-        res_ = set_utils._post_message(post_msg)
+    # try:
+    print('training...')
+    base, train_loss_list, val_loss_list = train_baseline(_model, train_iter, val_iter, optimizer, EPOCHS)
+    torch.save(base,'./model/case_.pt')
+
+    train_loss_msg = str(train_loss_list[-5])
+    # val_loss_msg = str(val_loss_list[-5])
+
+    for i in range(-4, 0):
+        train_loss_msg += f' ---> {train_loss_list[i]}'
+
+    post_msg = f'학습이 완료되었습니다\ntrain loss : {train_loss_msg}\nmin val loss : {min(val_loss_list)}\n ephoc of best val loss : {val_loss_list.index(min(val_loss_list))+1}'
+    res_ = set_utils._post_message(post_msg)
 
 
-    except Exception as e:
-        res_ = set_utils._post_message(f'Error : {e}')
+    # except Exception as e:
+        # res_ = set_utils._post_message(f'Error : {e}')
         # print(e)
     return True
 
