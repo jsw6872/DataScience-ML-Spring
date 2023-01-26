@@ -128,7 +128,7 @@ def train_model(model, dataloaders_dict, criterion, optimizer, num_epochs, devic
         epoch_train_loss = 0.0  
         epoch_val_loss = 0.0  
 
-        return train_loss_list, val_loss_list
+    return train_loss_list, val_loss_list
 
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -156,8 +156,8 @@ if __name__ == '__main__':
 
 
 
-    train_dataloader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=od_collate_fn)
-    val_dataloader = data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=od_collate_fn)
+    train_dataloader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=od_collate_fn, num_workers=6)
+    val_dataloader = data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=od_collate_fn, num_workers=6)
 
     print('Dataset is ready!')
 
