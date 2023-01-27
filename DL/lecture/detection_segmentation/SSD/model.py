@@ -157,28 +157,6 @@ class DBox(object):
         return output
 
 
-class SSD(nn.Module):
-
-    def __init__(self, phase, cfg):
-        super(SSD, self).__init__()
-
-        self.phase = phase  # train or inference
-        self.num_classes = cfg["num_classes"]  # 클래스 수 : 21
-
-        # SSD 네트워크
-        self.vgg = make_vgg()
-        self.extras = make_extras()
-        self.L2Norm = L2Norm()
-        self.loc, self.conf = make_loc_conf(cfg["num_classes"], cfg["bbox_aspect_num"])
-
-        # DBox 작성
-        dbox = DBox(cfg)
-        self.dbox_list = dbox.make_dbox_list()
-
-        # if phase == 'inference':
-        #     self.detect = Detect()
-
-
 def decode(loc, dbox_list):
     # 오프셋 정보(loc)로 DBox를 BBox로 변환
     # loc : [8732, 4], dbox_list : [8732, 4]
@@ -263,10 +241,14 @@ def nm_suppression(boxes, scores, overlap=0.45, top_k=200):
         # 지금부터 keep에 저장한 BBox와 크게 겹치는 BBox 추출하여 삭제
         # -------------------
         # 하나 감소시킨 idx까지의 BBox를 out으로 지정한 변수로 작성
-        torch.index_select(x1, 0, idx, out=tmp_x1)
-        torch.index_select(y1, 0, idx, out=tmp_y1)
-        torch.index_select(x2, 0, idx, out=tmp_x2)
-        torch.index_select(y2, 0, idx, out=tmp_y2)
+        tmp_x1 = torch.inQdex_select(x1, 0, idx, out=tmp_x1)
+        tmp_y1 = torch.index_select(y1, 0, idx, out=tmp_y1)
+        tmp_x2 = torch.index_select(x2, 0, idx, out=tmp_x2)
+        tmp_y2 = torch.index_select(y2, 0, idx, out=tmp_y2)
+        # tmp_x1 = torch.index_select(x1, 0, idx)#, out=tmp_x1)
+        # tmp_y1 = torch.index_select(y1, 0, idx)#, out=tmp_y1)
+        # tmp_x2 = torch.index_select(x2, 0, idx)#, out=tmp_x2)
+        # tmp_y2 = torch.index_select(y2, 0, idx)#, out=tmp_y2)
 
         # 
         tmp_x1 = torch.clamp(tmp_x1, min=x1[i])
@@ -441,7 +423,6 @@ class SSD(nn.Module):
         loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1)
         conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
 
-        # さらにlocとconfの形を整える
         # loc torch.Size([batch_num, 8732, 4])
         # conf torch.Size([batch_num, 8732, 21])
         loc = loc.view(loc.size(0), -1, 4)

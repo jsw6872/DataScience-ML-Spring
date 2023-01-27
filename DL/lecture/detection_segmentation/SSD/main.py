@@ -49,7 +49,7 @@ def train_model(model, dataloaders_dict, criterion, optimizer, num_epochs, devic
     train_loss_list = []
     val_loss_list = []
 
-    for epoch in range(num_epochs+1):
+    for epoch in range(num_epochs):
         t_epoch_start = time.time()
         t_iter_start = time.time()
 
@@ -62,12 +62,9 @@ def train_model(model, dataloaders_dict, criterion, optimizer, num_epochs, devic
                 model.train()
                 print('train')
             else:
-                if((epoch+1) % 5 == 0):
-                    model.eval()
-                    print('-------------')
-                    print('val')
-                else:
-                    continue
+                model.eval()
+                print('-------------')
+                print('val')
 
             for images, targets in dataloaders_dict[phase]:
                 images = images.to(device)
@@ -103,8 +100,7 @@ def train_model(model, dataloaders_dict, criterion, optimizer, num_epochs, devic
 
         t_epoch_finish = time.time()
         print('-------------')
-        print('epoch {} || Epoch_TRAIN_Loss:{:.4f} ||Epoch_VAL_Loss:{:.4f}'.format(
-            epoch+1, epoch_train_loss, epoch_val_loss))
+        print('epoch {} || Epoch_TRAIN_Loss:{:.4f} ||Epoch_VAL_Loss:{:.4f}'.format(epoch+1, epoch_train_loss, epoch_val_loss))
         print('timer:  {:.4f} sec.'.format(t_epoch_finish - t_epoch_start))
         t_epoch_start = time.time()
 
@@ -120,8 +116,8 @@ def train_model(model, dataloaders_dict, criterion, optimizer, num_epochs, devic
         if epoch_val_loss <= val_loss_list[-1]: # if ((epoch+1) % 10 == 0):
             torch.save(model.state_dict(), 'weights' + str(epoch+1) + '.pth')
         
-        if epoch % 10 == 0:
-            post_msg = f'LR: {0.001}\nEPOCH : {epoch}\ntrain loss : {epoch_train_loss}\nval loss : {epoch_val_loss}'
+        if (epoch+1) % 10 == 0:
+            post_msg = f'LR: {0.001}\nEPOCH : {epoch+1}\ntrain loss : {epoch_train_loss}\nval loss : {epoch_val_loss}'
             res_ = set_utils._post_message(post_msg)
             set_utils.send_plot(train_loss_list, val_loss_list)
         
