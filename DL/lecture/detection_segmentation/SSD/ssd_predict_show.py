@@ -140,3 +140,34 @@ class SSDPredictShow():
             # 長方形の枠の左上にラベルを描画する
             currentAxis.text(xy[0], xy[1], display_txt, bbox={
                              'facecolor': color, 'alpha': 0.5})
+
+
+
+if __name__ == '__main__':
+    from model import SSD
+
+    voc_classes = ['aeroplane', 'bicycle', 'bird', 'boat',
+               'bottle', 'bus', 'car', 'cat', 'chair',
+               'cow', 'diningtable', 'dog', 'horse',
+               'motorbike', 'person', 'pottedplant',
+               'sheep', 'sofa', 'train', 'tvmonitor']
+
+# SSD300
+    ssd_cfg = {
+        'num_classes': 21, 
+        'input_size': 300, 
+        'bbox_aspect_num': [4, 6, 6, 6, 4, 4],  
+        'feature_maps': [38, 19, 10, 5, 3, 1], 
+        'steps': [8, 16, 32, 64, 100, 300], 
+        'min_sizes': [30, 60, 111, 162, 213, 264], 
+        'max_sizes': [60, 111, 162, 213, 264, 315],
+        'aspect_ratios': [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
+    }
+
+    device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+    model = SSD(phase="inference", cfg=ssd_cfg)#.to(device)
+
+    image_file_path = "./voc_data/JPEGImages/2007_000241.jpg"
+
+    ssd = SSDPredictShow(eval_categories=voc_classes, net=model)
+    ssd.show(image_file_path, data_confidence_level=0.6)

@@ -241,20 +241,20 @@ def nm_suppression(boxes, scores, overlap=0.45, top_k=200):
         # 지금부터 keep에 저장한 BBox와 크게 겹치는 BBox 추출하여 삭제
         # -------------------
         # 하나 감소시킨 idx까지의 BBox를 out으로 지정한 변수로 작성
-        tmp_x1 = torch.inQdex_select(x1, 0, idx, out=tmp_x1)
-        tmp_y1 = torch.index_select(y1, 0, idx, out=tmp_y1)
-        tmp_x2 = torch.index_select(x2, 0, idx, out=tmp_x2)
-        tmp_y2 = torch.index_select(y2, 0, idx, out=tmp_y2)
-        # tmp_x1 = torch.index_select(x1, 0, idx)#, out=tmp_x1)
-        # tmp_y1 = torch.index_select(y1, 0, idx)#, out=tmp_y1)
-        # tmp_x2 = torch.index_select(x2, 0, idx)#, out=tmp_x2)
-        # tmp_y2 = torch.index_select(y2, 0, idx)#, out=tmp_y2)
+        # torch.index_select(x1, 0, idx, out=tmp_x1)
+        # torch.index_select(y1, 0, idx, out=tmp_y1)
+        # torch.index_select(x2, 0, idx, out= tmp_x2)
+        # torch.index_select(y2, 0, idx, out=tmp_y2)
+        tmp_x1 = torch.index_select(x1, 0, idx)#, out=tmp_x1)
+        tmp_y1 = torch.index_select(y1, 0, idx)#, out=tmp_y1)
+        tmp_x2 = torch.index_select(x2, 0, idx)#, out=tmp_x2)
+        tmp_y2 = torch.index_select(y2, 0, idx)#, out=tmp_y2)
 
         # 
-        tmp_x1 = torch.clamp(tmp_x1, min=x1[i])
-        tmp_y1 = torch.clamp(tmp_y1, min=y1[i])
-        tmp_x2 = torch.clamp(tmp_x2, max=x2[i])
-        tmp_y2 = torch.clamp(tmp_y2, max=y2[i])
+        tmp_x1 = torch.clamp(tmp_x1, min=x1[i]).detach()
+        tmp_y1 = torch.clamp(tmp_y1, min=y1[i]).detach()
+        tmp_x2 = torch.clamp(tmp_x2, max=x2[i]).detach()
+        tmp_y2 = torch.clamp(tmp_y2, max=y2[i]).detach()
 
         # w, h의 텐서 크기를 index 하나 줄인 것으로 함
         tmp_w.resize_as_(tmp_x2)
@@ -379,7 +379,6 @@ class SSD(nn.Module):
         # DBox
         dbox = DBox(cfg)
         self.dbox_list = dbox.make_dbox_list()
-
         # 추론 시 detect
         if phase == 'inference':
             self.detect = Detect()
@@ -432,7 +431,7 @@ class SSD(nn.Module):
 
         if self.phase == "inference":
             # output torch.Size([batch_num, 21, 200, 5])
-            return self.detect(output[0], output[1], output[2])
+            return self.detect.forward(output[0], output[1], output[2])
 
         else:
             return output
