@@ -40,7 +40,7 @@ class PennFudanDataset(torch.utils.data.Dataset):
         boxes = []
         for i in range(num_objs):
             pos = np.where(masks[i])
-            xmin = np.min(pos[1])
+            xmin = np.min(pos[1]) 
             xmax = np.max(pos[1])
             ymin = np.min(pos[0])
             ymax = np.max(pos[0])
@@ -91,8 +91,8 @@ if __name__ == '__main__':
     # our dataset has two classes only - background and person
     num_classes = 2
     # use our dataset and defined transformations
-    dataset = PennFudanDataset('/home/seongwoo/workspace/DataScience_ML-DL/DL/assignment/detection/example/PennFudanPed', get_transform(train=True))
-    dataset_test = PennFudanDataset('PennFudanPed', get_transform(train=False))
+    dataset = PennFudanDataset('/home/seongwoo/workspace/DataScience_ML-DL/DL/assignment/detection_example/example/PennFudanPed', get_transform(train=True))
+    dataset_test = PennFudanDataset('/home/seongwoo/workspace/DataScience_ML-DL/DL/assignment/detection_example/example/PennFudanPed', get_transform(train=False))
 
     indices = torch.randperm(len(dataset)).tolist()
 
@@ -107,6 +107,10 @@ if __name__ == '__main__':
                                                 collate_fn=utils.collate_fn)
 
     model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights="DEFAULT")
+    for child in model.children():
+        # if layer <= 6: # 8, 9번째는 pooling, linear layer라서 학습에 큰 의미가 없음
+        for param in child.parameters():
+            param.requires_grad = False
     # 분류기를 새로운 것으로 교체하는데, num_classes는 사용자가 정의합니다
     num_classes = 2  # 1 클래스(사람) + 배경
     # 분류기에서 사용할 입력 특징의 차원 정보를 얻습니다
