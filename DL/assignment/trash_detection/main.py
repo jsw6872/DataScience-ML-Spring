@@ -57,7 +57,7 @@ if __name__ == '__main__':
                                                 dataset_test, batch_size=1, shuffle=False, num_workers=4,
                                                 collate_fn=utils.collate_fn)
 
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(weights = None, weights_backbone = ResNet50_Weights)#, weights_backbone = None)
+    model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(weights = None, weights_backbone = None)#, weights_backbone = None)
     # for child in model.children():
     #     for param in child.parameters():
     #         param.requires_grad = False

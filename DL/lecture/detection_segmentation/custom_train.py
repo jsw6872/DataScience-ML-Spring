@@ -22,10 +22,11 @@ from dataset import *
 from model import Yolov4
 # from tool.darknet2pytorch import Darknet
 
+from cfg import Cfg
+
 from tool.tv_reference.utils import collate_fn as val_collate
-os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-# from tool.tv_reference.coco_utils import convert_to_coco_api
-# from tool.tv_reference.coco_eval import CocoEvaluator
+from tool.tv_reference.coco_utils import convert_to_coco_api
+from tool.tv_reference.coco_eval import CocoEvaluator
 
 
 def bboxes_iou(bboxes_a, bboxes_b, xyxy=True, GIoU=False, DIoU=False, CIoU=False):
@@ -278,160 +279,230 @@ def collate(batch):
     return images, bboxes
 
 
-def od_collate_fn(batch):
-    imgs = []
-    bboxes = []
-    for img, box in batch:
-        img = cv2.resize(img, (512, 512))
-        imgs.append([img])
-        # imgs.append(torch.from_numpy(img))  # 이미지
-        bboxes.append(torch.cat((box[0].squeeze(),box[1]), dim = 0))  # sample[1] 어노테이션 정보
-    imgs = np.concatenate(imgs, axis=0)
-    imgs = imgs.transpose(0, 3, 1, 2)
-    imgs = torch.from_numpy(imgs).div(255.0) # (batch_size, channel, width, height)
-    # imgs = torch.stack(imgs)
 
-    bboxes = np.concatenate(bboxes, axis=0)
-    bboxes = torch.from_numpy(bboxes)
-    return imgs, bboxes
-
-
-def train(model, learning_rate, batch_size, epochs=30, save_cp=True):
+def train(model, device, config, epochs=5, save_cp=True, log_step=20, img_scale=0.5):
     train_dataset = Yolo_dataset(data_path, train=True)
     val_dataset = Yolo_dataset(data_path, train=False)
 
-    # 원래 : drop_last=True, config.batch // config.subdivisions
-    train_loader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,collate_fn=collate)
-    val_loader = data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, collate_fn=collate)
     n_train = len(train_dataset)
     n_val = len(val_dataset)
 
-    # global_step = 0
+    train_loader = DataLoader(train_dataset, batch_size=4, shuffle=True, num_workers=6, 
+                              pin_memory=True, drop_last=True, collate_fn=collate)
+
+    val_loader = DataLoader(val_dataset, batch_size=4, shuffle=True, num_workers=6,
+                            pin_memory=True, drop_last=True, collate_fn=val_collate)
+
+    # writer = SummaryWriter(log_dir=config.TRAIN_TENSORBOARD_DIR,
+    #                        filename_suffix=f'OPT_{config.TRAIN_OPTIMIZER}_LR_{config.learning_rate}_BS_{config.batch}_Sub_{config.subdivisions}_Size_{config.width}',
+    #                        comment=f'OPT_{config.TRAIN_OPTIMIZER}_LR_{config.learning_rate}_BS_{config.batch}_Sub_{config.subdivisions}_Size_{config.width}')
+    # writer.add_images('legend',
+    #                   torch.from_numpy(train_dataset.label2colorlegend2(cfg.DATA_CLASSES).transpose([2, 0, 1])).to(
+    #                       device).unsqueeze(0))
+    # max_itr = config.TRAIN_EPOCHS * n_train
+    # global_step = cfg.TRAIN_MINEPOCH * n_train
+    global_step = 0
+    # logging.info(f'''Starting training:
+    #     Epochs:          {epochs}
+    #     Training size:   {n_train}
+    #     Validation size: {n_val}
+    #     Checkpoints:     {save_cp}
+
+    #     Pretrained:
+    # ''')
 
     # learning rate setup
-    # def burnin_schedule(i):
-    #     if i < config.burn_in:
-    #         factor = pow(i / config.burn_in, 4)
-    #     elif i < config.steps[0]:
-    #         factor = 1.0
-    #     elif i < config.steps[1]:
-    #         factor = 0.1
-    #     else:
-    #         factor = 0.01
-    #     return factor
+    def burnin_schedule(i):
+        if i < config.burn_in:
+            factor = pow(i / config.burn_in, 4)
+        elif i < config.steps[0]:
+            factor = 1.0
+        elif i < config.steps[1]:
+            factor = 0.1
+        else:
+            factor = 0.01
+        return factor
 
-    optimizer = optim.Adam(model.parameters(),lr=learning_rate,betas=(0.9, 0.999),eps=1e-08)
-    # optimizer = optim.SGD(params=model.parameters(),lr=learning_rate,momentum=0.9,weight_decay=0.001)
-
+    if config.TRAIN_OPTIMIZER.lower() == 'adam':
+        optimizer = optim.Adam(
+            model.parameters(),
+            lr=config.learning_rate / config.batch,
+            betas=(0.9, 0.999),
+            eps=1e-08,
+        )
+    elif config.TRAIN_OPTIMIZER.lower() == 'sgd':
+        optimizer = optim.SGD(
+            params=model.parameters(),
+            lr=config.learning_rate / config.batch,
+            momentum=config.momentum,
+            weight_decay=config.decay,
+        )
     # scheduler = optim.lr_scheduler.LambdaLR(optimizer, burnin_schedule)
 
-    criterion = Yolo_loss(device=device, batch=batch_size, n_classes=80)
+    criterion = Yolo_loss(device=device, batch=4, n_classes=80)
     # scheduler = ReduceLROnPlateau(optimizer, mode='max', verbose=True, patience=6, min_lr=1e-7)
     # scheduler = CosineAnnealingWarmRestarts(optimizer, 0.001, 1e-6, 20)
-    logging.info(f'''Starting training:
-        Epochs:          {epochs}
-        Batch size:      {batch_size}
-        Learning rate:   {learning_rate}
-        Training size:   {n_train}
-        Validation size: {n_val}
-        Checkpoints:     {save_cp}
-        Optimizer:       {optimizer}
-    ''') #Subdivisions:    {config.subdivisions}
 
     save_prefix = 'Yolov4_epoch'
     saved_models = deque()
     model.train()
     for epoch in range(epochs):
-        since = time.time() 
         # model.train()
-        train_loss = 0
-        best_model_wts = copy.deepcopy(model.state_dict()) 
-        # epoch_step = 0
-        # with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img', ncols=50) as pbar:
-        for i, batch in enumerate(train_loader):
-            # global_step += 1
-            # epoch_step += 1
-            images = batch[0]
-            bboxes = batch[1]
+        epoch_loss = 0
+        epoch_step = 0
 
-            images = images.to(device=device, dtype=torch.float32)
-            bboxes = bboxes.to(device=device)
+        with tqdm(total=n_train, desc=f'Epoch {epoch + 1}/{epochs}', unit='img', ncols=50) as pbar:
+            for i, batch in enumerate(train_loader):
+                global_step += 1
+                epoch_step += 1
+                images = batch[0]
+                bboxes = batch[1]
 
-            # optimizer.zero_grad() # 내가 추가한 코드
+                images = images.to(device=device, dtype=torch.float32)
+                bboxes = bboxes.to(device=device)
 
-            bboxes_pred = model(images)
-            loss, loss_xy, loss_wh, loss_obj, loss_cls, loss_l2 = criterion(bboxes_pred, bboxes)
-            # loss = loss / config.subdivisions
-            loss.backward()
-            train_loss += loss.item()
-            optimizer.step()
+                bboxes_pred = model(images) # torch.Size([4, 255, 76, 76]), torch.Size([4, 255, 38, 38]), torch.Size([4, 255, 19, 19])
+                loss, loss_xy, loss_wh, loss_obj, loss_cls, loss_l2 = criterion(bboxes_pred, bboxes)
+                # loss = loss / config.subdivisions
+                loss.backward()
 
-            # train_loss = evaluate(model, train_loader, criterion)
-            # val_loss = evaluate(model, val_loader, criterion)
+                epoch_loss += loss.item()
+
+                if global_step % config.subdivisions == 0:
+                    optimizer.step()
+                    # scheduler.step()
+                    model.zero_grad()
+
+                if global_step % (log_step * config.subdivisions) == 0:
+                    # writer.add_scalar('train/Loss', loss.item(), global_step)
+                    # writer.add_scalar('train/loss_xy', loss_xy.item(), global_step)
+                    # writer.add_scalar('train/loss_wh', loss_wh.item(), global_step)
+                    # writer.add_scalar('train/loss_obj', loss_obj.item(), global_step)
+                    # writer.add_scalar('train/loss_cls', loss_cls.item(), global_step)
+                    # writer.add_scalar('train/loss_l2', loss_l2.item(), global_step)
+                    # writer.add_scalar('lr', scheduler.get_lr()[0] * config.batch, global_step)
+                    pbar.set_postfix(**{'loss (batch)': loss.item(), 'loss_xy': loss_xy.item(),
+                                        'loss_wh': loss_wh.item(),
+                                        'loss_obj': loss_obj.item(),
+                                        'loss_cls': loss_cls.item(),
+                                        'loss_l2': loss_l2.item(),
+                                        })
+                    logging.debug('Train step_{}: loss : {},loss xy : {},loss wh : {},'
+                                  'loss obj : {}，loss cls : {},loss l2 : {},lr : {}'
+                                  .format(global_step, loss.item(), loss_xy.item(),
+                                          loss_wh.item(), loss_obj.item(),
+                                          loss_cls.item(), loss_l2.item(),))
+
+                pbar.update(images.shape[0])
+
             
-            # if best_val_loss > val_loss:
-            #     best_val_loss = val_loss
-            #     best_model_wts = copy.deepcopy(model.state_dict())
-
-            time_elapsed = time.time() - since 
-            print('-------------- epoch {} ----------------'.format(epoch))
-            print('train Loss: {:.4f}'.format(train_loss))   
-            # print('val Loss: {:.4f}'.format(val_loss))
-            print('Completed in {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
-    model.load_state_dict(best_model_wts)
-    return model
-
-
-def evaluate(model, data_loader, criterion):
-    model.eval()
-    eval_loss = 0
-    # with torch.no_grad():
-    for i, batch in enumerate(data_loader):
-        images = batch[0]
-        bboxes = batch[1]
-
-        images = images.to(device, dtype = torch.float32)
-        bboxes = bboxes.to(device)
-
-        bboxes_pred = model(images)
-        loss, loss_xy, loss_wh, loss_obj, loss_cls, loss_l2 = criterion(bboxes_pred, bboxes)
-        eval_loss += loss.item()
-    return eval_loss / len(data_loader)
-                # scheduler.step()
-                # model.zero_grad()
-
-                # pbar.update(images.shape[0])
-
+            eval_model = Yolov4(True, n_classes=80, inference=True)
             # eval_model = Yolov4(yolov4conv137weight=None, n_classes=config.classes, inference=True)
-            # eval_model = Yolov4(n_classes=len(voc_classes), inference=True)
-            # eval_model.load_state_dict(model.state_dict())
-            # eval_model.to(device)
-            # evaluator = evaluate(eval_model, val_loader)
-            
-            # del eval_model
 
-            # stats = evaluator.coco_eval['bbox'].stats
-  
-            # if save_cp:
-            #     try:
-            #         # os.mkdir(config.checkpoints)
-            #         os.makedirs('./checkpoints', exist_ok=True)
-            #         logging.info('Created checkpoint directory')
-            #     except OSError:
-            #         pass
-            #     save_path = os.path.join('./checkpoints', f'{save_prefix}{epoch + 1}.pth')
+            eval_model.load_state_dict(model.state_dict())
+            eval_model.to(device)
+            evaluator = evaluate(eval_model, val_loader, config, device)
+            del eval_model
 
-            #     torch.save(model.state_dict(), save_path)
-            #     logging.info(f'Checkpoint {epoch + 1} saved !')
-            #     saved_models.append(save_path)
-            #     if len(saved_models) > epoch//batch_size > 0:
-            #         model_to_remove = saved_models.popleft()
-            #         try:
-            #             os.remove(model_to_remove)
-            #         except:
-            #             logging.info(f'failed to remove {model_to_remove}')
+            stats = evaluator.coco_eval['bbox'].stats
+            # writer.add_scalar('train/AP', stats[0], global_step)
+            # writer.add_scalar('train/AP50', stats[1], global_step)
+            # writer.add_scalar('train/AP75', stats[2], global_step)
+            # writer.add_scalar('train/AP_small', stats[3], global_step)
+            # writer.add_scalar('train/AP_medium', stats[4], global_step)
+            # writer.add_scalar('train/AP_large', stats[5], global_step)
+            # writer.add_scalar('train/AR1', stats[6], global_step)
+            # writer.add_scalar('train/AR10', stats[7], global_step)
+            # writer.add_scalar('train/AR100', stats[8], global_step)
+            # writer.add_scalar('train/AR_small', stats[9], global_step)
+            # writer.add_scalar('train/AR_medium', stats[10], global_step)
+            # writer.add_scalar('train/AR_large', stats[11], global_step)
 
-    # writer.close()
+            if save_cp:
+                try:
+                    # os.mkdir(config.checkpoints)
+                    os.makedirs(config.checkpoints, exist_ok=True)
+                    logging.info('Created checkpoint directory')
+                except OSError:
+                    pass
+                save_path = os.path.join(config.checkpoints, f'{save_prefix}{epoch + 1}.pth')
+                if isinstance(model, torch.nn.DataParallel):
+                    torch.save(model.module.state_dict(), save_path)
+                else:
+                    torch.save(model.state_dict(), save_path)
+                logging.info(f'Checkpoint {epoch + 1} saved !')
+                saved_models.append(save_path)
+                if len(saved_models) > config.keep_checkpoint_max > 0:
+                    model_to_remove = saved_models.popleft()
+                    try:
+                        os.remove(model_to_remove)
+                    except:
+                        logging.info(f'failed to remove {model_to_remove}')
+
+
+@torch.no_grad()
+def evaluate(model, data_loader, cfg, device, logger=None, **kwargs):
+    """ finished, tested
+    """
+    # cpu_device = torch.device("cpu")
+    model.eval()
+    # header = 'Test:'
+
+    coco = convert_to_coco_api(data_loader.dataset, bbox_fmt='coco')
+    coco_evaluator = CocoEvaluator(coco, iou_types = ["bbox"], bbox_fmt='coco')
+
+    for images, targets in data_loader:
+        model_input = [[cv2.resize(img, (cfg.w, cfg.h))] for img in images]
+        model_input = np.concatenate(model_input, axis=0)
+        model_input = model_input.transpose(0, 3, 1, 2)
+        model_input = torch.from_numpy(model_input).div(255.0)
+        model_input = model_input.to(device)
+        targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        model_time = time.time()
+        outputs = model(model_input)
+
+        # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+        model_time = time.time() - model_time
+
+        # outputs = outputs.cpu().detach().numpy()
+        res = {}
+        # for img, target, output in zip(images, targets, outputs):
+        for img, target, boxes, confs in zip(images, targets, outputs[0], outputs[1]):
+            img_height, img_width = img.shape[:2]
+            # boxes = output[...,:4].copy()  # output boxes in yolo format
+            boxes = boxes.squeeze(2).cpu().detach().numpy()
+            boxes[...,2:] = boxes[...,2:] - boxes[...,:2] # Transform [x1, y1, x2, y2] to [x1, y1, w, h]
+            boxes[...,0] = boxes[...,0]*img_width
+            boxes[...,1] = boxes[...,1]*img_height
+            boxes[...,2] = boxes[...,2]*img_width
+            boxes[...,3] = boxes[...,3]*img_height
+            boxes = torch.as_tensor(boxes, dtype=torch.float32)
+            # confs = output[...,4:].copy()
+            confs = confs.cpu().detach().numpy()
+            labels = np.argmax(confs, axis=1).flatten()
+            labels = torch.as_tensor(labels, dtype=torch.int64)
+            scores = np.max(confs, axis=1).flatten()
+            scores = torch.as_tensor(scores, dtype=torch.float32)
+            res[target["image_id"].item()] = {
+                "boxes": boxes,
+                "scores": scores,
+                "labels": labels,
+            }
+        evaluator_time = time.time()
+        coco_evaluator.update(res)
+        evaluator_time = time.time() - evaluator_time
+
+    # gather the stats from all processes
+    coco_evaluator.synchronize_between_processes()
+
+    # accumulate predictions from all images
+    coco_evaluator.accumulate()
+    coco_evaluator.summarize()
+
+    return coco_evaluator
 
 
 def init_logger(log_file=None, log_dir=None, log_level=logging.INFO, mode='w', stdout=True):
@@ -476,37 +547,23 @@ def _get_date_str():
 
 if __name__ == "__main__":
     data_path = '/home/seongwoo/workspace/DataScience_ML-DL/DL/lecture/detection_segmentation/data'
-    # train_img_list, train_anno_list, val_img_list, val_anno_list = make_datapath_list(rootpath)
-
-    # voc_classes = ['aeroplane', 'bicycle', 'bird', 'boat',
-    #            'bottle', 'bus', 'car', 'cat', 'chair',
-    #            'cow', 'diningtable', 'dog', 'horse',
-    #            'motorbike', 'person', 'pottedplant',
-    #            'sheep', 'sofa', 'train', 'tvmonitor']
-
-    # color_mean = (104, 117, 123)  # (BGR) 평균값
-    # input_size = 300  # 이미지 input size
 
     train_dataset = Yolo_dataset(data_path, train=True)
     val_dataset = Yolo_dataset(data_path, train=False)
 
-    batch_size = 2
+    batch_size = 4
     learning_rate = 0.05
-    epochs = 5
+    epochs = 1
     # 원래 : drop_last=True, config.batch // config.subdivisions
-    train_loader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=0,collate_fn=collate)
-    val_loader = data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, collate_fn=collate)
-
-
-
-
+    train_loader = data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=6,collate_fn=collate)
+    val_loader = data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=6, collate_fn=collate)
 
 
     logging = init_logger(log_dir='log')
     # cfg = get_args(**Cfg)
     # os.environ["CUDA_VISIBLE_DEVICES"] = cfg.gpu
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    device = torch.device('cpu')
+    device = torch.device('cuda')
     logging.info(f'Using device {device}')
 
     # if cfg.use_darknet_cfg:
@@ -516,8 +573,8 @@ if __name__ == "__main__":
     model.to(device)
 
     try:
-        saved_model = train(model=model, learning_rate=learning_rate, epochs=epochs, batch_size=batch_size)
-        torch.save(saved_model,'./model/test.pt')
+        saved_model = train(model=model, config=Cfg, epochs=epochs, device=device)
+        # torch.save(saved_model,'./model/test.pt')
 
     except KeyboardInterrupt:
         if isinstance(model, torch.nn.DataParallel):
@@ -529,163 +586,3 @@ if __name__ == "__main__":
             sys.exit(0)
         except SystemExit:
             os._exit(0)
-
-# @torch.no_grad()
-# def coco_evaluate(model, data_loader, logger=None, **kwargs):
-#     """ finished, tested
-#     """
-#     # cpu_device = torch.device("cpu")
-#     model.eval()
-#     # header = 'Test:'
-
-#     coco = convert_to_coco_api(data_loader.dataset, bbox_fmt='coco')
-#     coco_evaluator = CocoEvaluator(coco, iou_types = ["bbox"], bbox_fmt='coco')
-
-#     for images, targets in data_loader:
-#         model_input = [[cv2.resize(img, (cfg.w, cfg.h))] for img in images]
-#         model_input = np.concatenate(model_input, axis=0)
-#         model_input = model_input.transpose(0, 3, 1, 2)
-#         model_input = torch.from_numpy(model_input).div(255.0)
-#         model_input = model_input.to(device)
-#         targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-#         if torch.cuda.is_available():
-#             torch.cuda.synchronize()
-#         model_time = time.time()
-#         outputs = model(model_input)
-
-#         # outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
-#         model_time = time.time() - model_time
-
-#         # outputs = outputs.cpu().detach().numpy()
-#         res = {}
-#         # for img, target, output in zip(images, targets, outputs):
-#         for img, target, boxes, confs in zip(images, targets, outputs[0], outputs[1]):
-#             img_height, img_width = img.shape[:2]
-#             # boxes = output[...,:4].copy()  # output boxes in yolo format
-#             boxes = boxes.squeeze(2).cpu().detach().numpy()
-#             boxes[...,2:] = boxes[...,2:] - boxes[...,:2] # Transform [x1, y1, x2, y2] to [x1, y1, w, h]
-#             boxes[...,0] = boxes[...,0]*img_width
-#             boxes[...,1] = boxes[...,1]*img_height
-#             boxes[...,2] = boxes[...,2]*img_width
-#             boxes[...,3] = boxes[...,3]*img_height
-#             boxes = torch.as_tensor(boxes, dtype=torch.float32)
-#             # confs = output[...,4:].copy()
-#             confs = confs.cpu().detach().numpy()
-#             labels = np.argmax(confs, axis=1).flatten()
-#             labels = torch.as_tensor(labels, dtype=torch.int64)
-#             scores = np.max(confs, axis=1).flatten()
-#             scores = torch.as_tensor(scores, dtype=torch.float32)
-#             res[target["image_id"].item()] = {
-#                 "boxes": boxes,
-#                 "scores": scores,
-#                 "labels": labels,
-#             }
-#         evaluator_time = time.time()
-#         coco_evaluator.update(res)
-#         evaluator_time = time.time() - evaluator_time
-
-#     # gather the stats from all processes
-#     coco_evaluator.synchronize_between_processes()
-
-#     # accumulate predictions from all images
-#     coco_evaluator.accumulate()
-#     coco_evaluator.summarize()
-
-#     return coco_evaluator
-
-
-# def convert_output_to_boxes(outputs):
-#     # Extract the bounding box coordinates, labels, and confidences
-#     boxes = []
-#     labels = []
-#     confidences = []
-
-#     # Iterate through the output and extract the bounding boxes and labels
-#     for i, output in enumerate(outputs):
-#         # Extract the bounding box coordinates and confidences
-#         box = output[:, :4]
-#         confidence = output[:, 4]
-
-#         # Extract the labels
-#         label = output[:, 5:]
-
-#         # Append the bounding boxes and labels to the list
-#         boxes.append(box)
-#         confidences.append(confidence)
-#         labels.append(label)
-
-#     return boxes, labels, confidences
-
-
-
-# def visualize_detections(model, image, device):
-#     model.eval()
-#     with torch.no_grad():
-#         image = image.to(device)
-#         outputs = model(image)
-        
-#         # Convert the output to bounding boxes
-#         boxes, labels, confidences = convert_output_to_boxes(outputs)
-
-#         # Draw the bounding boxes on the image
-#         for box, label, confidence in zip(boxes, labels, confidences):
-#             xmin, ymin, xmax, ymax = box
-#             cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
-#             cv2.putText(image, f"{label}: {confidence:.2f}", (xmin, ymin-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-#     # Convert the image to BGR and display it
-#     image = cv2.cvtColor(np.uint8(image), cv2.COLOR_RGB2BGR)
-#     cv2.imshow("Image with detections", image)
-#     cv2.waitKey(0)
-#     cv2.destroyAllWindows()
-
-# Example usage
-# image = cv2.imread("path/to/image.jpg")
-# image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-# image = torch.from_numpy(image)
-# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-# visualize_detections(model, image, device)
-
-
-
-
-
-
-# def get_args(**kwargs):
-#     cfg = kwargs
-#     parser = argparse.ArgumentParser(description='Train the Model on images and target masks',
-#                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-#     # parser.add_argument('-b', '--batch-size', metavar='B', type=int, nargs='?', default=2,
-#     #                     help='Batch size', dest='batchsize')
-#     parser.add_argument('-l', '--learning-rate', metavar='LR', type=float, nargs='?', default=0.001,
-#                         help='Learning rate', dest='learning_rate')
-#     parser.add_argument('-f', '--load', dest='load', type=str, default=None,
-#                         help='Load model from a .pth file')
-#     parser.add_argument('-g', '--gpu', metavar='G', type=str, default='-1',
-#                         help='GPU', dest='gpu')
-#     parser.add_argument('-dir', '--data-dir', type=str, default=None,
-#                         help='dataset dir', dest='dataset_dir')
-#     parser.add_argument('-pretrained', type=str, default=None, help='pretrained yolov4.conv.137')
-#     parser.add_argument('-classes', type=int, default=80, help='dataset classes')
-#     parser.add_argument('-train_label_path', dest='train_label', type=str, default='train.txt', help="train label path")
-#     parser.add_argument(
-#         '-optimizer', type=str, default='adam',
-#         help='training optimizer',
-#         dest='TRAIN_OPTIMIZER')
-#     parser.add_argument(
-#         '-iou-type', type=str, default='iou',
-#         help='iou type (iou, giou, diou, ciou)',
-#         dest='iou_type')
-#     parser.add_argument(
-#         '-keep-checkpoint-max', type=int, default=10,
-#         help='maximum number of checkpoints to keep. If set 0, all checkpoints will be kept',
-#         dest='keep_checkpoint_max')
-#     args = vars(parser.parse_args())
-
-#     # for k in args.keys():
-#     #     cfg[k] = args.get(k)
-#     cfg.update(args)
-
-#     return edict(cfg)
-
